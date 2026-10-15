@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Eos — Old-School Text RPG (Local Browser LLM)</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- Left Sidebar: Character Sheet, Inventory & Save Slots -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">
+            <span class="brand-icon">⚔️</span>
+            <div>
+              <h1>EOS</h1>
+              <span class="brand-sub">Sword &amp; Sorcery AI RPG</span>
+            </div>
+          </div>
+          <button id="new-hero-btn" class="btn btn-primary btn-sm" type="button" title="Create a new character">
+            + New Hero
+          </button>
+        </div>
+
+        <!-- Active Location Badge -->
+        <div class="sidebar-section location-card">
+          <div class="section-label">Current Location</div>
+          <div id="ui-location-name" class="location-title">The Rusty Flagon Inn</div>
+          <div id="ui-location-region" class="location-sub">Frontier Town of Oakhaven • Turn 1</div>
+        </div>
+
+        <!-- Character Sheet Card -->
+        <div class="sidebar-section">
+          <div class="hero-identity">
+            <div>
+              <div id="ui-hero-name" class="hero-name">Kaelen</div>
+              <div id="ui-hero-class" class="hero-class">Lv 1 Mercenary Warrior</div>
+            </div>
+            <span id="ui-hero-gold" class="gold-pill">🪙 35 GP</span>
+          </div>
+
+          <!-- Vitals Bars -->
+          <div class="vitals-grid">
+            <div class="vital-row">
+              <div class="vital-label">
+                <span>HP</span>
+                <span id="ui-hp-text">28 / 28</span>
+              </div>
+              <div class="progress-track">
+                <div id="ui-hp-bar" class="progress-fill hp-fill" style="width: 100%"></div>
+              </div>
+            </div>
+
+            <div class="vital-row">
+              <div class="vital-label">
+                <span>Mana</span>
+                <span id="ui-mana-text">6 / 6</span>
+              </div>
+              <div class="progress-track">
+                <div id="ui-mana-bar" class="progress-fill mana-fill" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Core Stats (STR, DEX, INT, WIS) -->
+          <div class="stats-grid">
+            <div class="stat-box" title="Strength — Melee attacks, bashing doors, physical might">
+              <span class="stat-name">STR</span>
+              <span id="ui-stat-str" class="stat-val">16</span>
+              <span id="ui-mod-str" class="stat-mod">+3</span>
+            </div>
+            <div class="stat-box" title="Dexterity — Stealth, lockpicking, dodging traps, ranged precision">
+              <span class="stat-name">DEX</span>
+              <span id="ui-stat-dex" class="stat-val">12</span>
+              <span id="ui-mod-dex" class="stat-mod">+1</span>
+            </div>
+            <div class="stat-box" title="Intelligence — Arcane spells, deciphering runes, lore investigation">
+              <span class="stat-name">INT</span>
+              <span id="ui-stat-int" class="stat-val">9</span>
+              <span id="ui-mod-int" class="stat-mod">-1</span>
+            </div>
+            <div class="stat-box" title="Wisdom — Perception, divine miracles, willpower, reading intent">
+              <span class="stat-name">WIS</span>
+              <span id="ui-stat-wis" class="stat-val">11</span>
+              <span id="ui-mod-wis" class="stat-mod">+0</span>
+            </div>
+          </div>
+
+          <!-- Manual d20 Roller -->
+          <div class="dice-roller-box">
+            <div class="dice-roller-top">
+              <span class="section-label">d20 Check Roller</span>
+              <div class="dice-btn-group">
+                <button type="button" class="chip-btn roll-stat-btn" data-stat="STR">d20+STR</button>
+                <button type="button" class="chip-btn roll-stat-btn" data-stat="DEX">d20+DEX</button>
+                <button type="button" class="chip-btn roll-stat-btn" data-stat="INT">d20+INT</button>
+                <button type="button" class="chip-btn roll-stat-btn" data-stat="WIS">d20+WIS</button>
+              </div>
+            </div>
+            <div id="ui-dice-result" class="dice-result-banner">Click a stat or take a risky action to roll d20</div>
+          </div>
+        </div>
+
+        <!-- Equipment & Inventory -->
+        <div class="sidebar-section">
+          <div class="section-label">Equipped Gear</div>
+          <div id="ui-equipment-list" class="equipment-list"></div>
+
+          <div class="section-label" style="margin-top: 10px">Inventory (Click usable items)</div>
+          <div id="ui-inventory-list" class="inventory-list"></div>
+        </div>
+
+        <!-- Save Manager (LocalStorage Slots + .eos.json Export/Import) -->
+        <div class="sidebar-section save-section">
+          <div class="save-header">
+            <span class="section-label">Progress &amp; Save File</span>
+            <span id="ui-autosave-badge" class="autosave-badge">Auto-Saved</span>
+          </div>
+
+          <div class="slot-row">
+            <select id="save-slot-select" class="input-select" aria-label="Save Slot">
+              <option value="slot_1">Slot 1 (Primary Save)</option>
+              <option value="slot_2">Slot 2 (Campaign B)</option>
+              <option value="slot_3">Slot 3 (Campaign C)</option>
+            </select>
+            <button id="save-now-btn" class="btn btn-secondary btn-sm" type="button" title="Save to current LocalStorage slot">
+              Save
+            </button>
+          </div>
+
+          <div class="save-file-actions">
+            <button id="export-save-btn" class="btn btn-secondary btn-sm" type="button" title="Download player save file (.eos.json)">
+              ⬇ Export .eos.json
+            </button>
+            <label for="import-save-input" class="btn btn-secondary btn-sm file-label" title="Load a player save file (.eos.json)">
+              ⬆ Load Save File
+            </label>
+            <input id="import-save-input" type="file" accept=".json,.eos.json" class="hidden" />
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Column: Standard AI LLM Interface for the Adventure -->
+      <main class="main-area">
+        <!-- Top Bar: In-Browser LLM Selector & Status -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button id="mobile-sidebar-btn" class="btn btn-ghost btn-sm mobile-only" type="button">
+              ☰ Hero Sheet
+            </button>
+            <div class="model-controls">
+              <label for="model-select" class="control-label">Local LLM:</label>
+              <select id="model-select" class="input-select model-select">
+                <option value="HuggingFaceTB/SmolLM2-360M-Instruct" selected>
+                  SmolLM2-360M-Instruct (Fast Default • ~280 MB)
+                </option>
+                <option value="HuggingFaceTB/SmolLM2-135M-Instruct">
+                  SmolLM2-135M-Instruct (Ultra-Light • ~110 MB)
+                </option>
+                <option value="Qwen/Qwen2.5-0.5B-Instruct">
+                  Qwen2.5-0.5B-Instruct (Strong Narrative • ~400 MB)
+                </option>
+                <option value="onnx-community/Llama-3.2-1B-Instruct-q4f16">
+                  Llama-3.2-1B-Instruct (Deepest Lore DM • ~750 MB)
+                </option>
+                <option value="HuggingFaceTB/SmolLM2-1.7B-Instruct">
+                  SmolLM2-1.7B-Instruct (High Reasoning • ~1.1 GB)
+                </option>
+              </select>
+
+              <select id="dtype-select" class="input-select dtype-select" title="Quantization precision">
+                <option value="auto" selected>Auto (q4f16/q4)</option>
+                <option value="q4f16">q4f16 (WebGPU FP16)</option>
+                <option value="q4">q4 (INT4)</option>
+                <option value="q8">q8 (INT8)</option>
+              </select>
+
+              <button id="load-model-btn" class="btn btn-secondary btn-sm" type="button">
+                Load LLM
+              </button>
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <span id="telemetry-pill" class="telemetry-pill hidden">0.0 tok/s</span>
+            <span id="gpu-status-badge" class="status-pill">Checking WebGPU...</span>
+          </div>
+        </header>
+
+        <!-- Model Download Progress Bar (hidden unless downloading weights) -->
+        <div id="download-banner" class="download-banner hidden">
+          <div class="download-info">
+            <span id="download-label">Downloading LLM weights to browser cache...</span>
+            <span id="download-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="download-bar" class="progress-fill accent-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Central Conversation / Adventure Stream -->
+        <section id="story-feed" class="story-feed" aria-live="polite"></section>
+
+        <!-- Bottom Action Dock: Dynamic 1-4 Choices + Freeform Prompt Input -->
+        <footer class="composer-dock">
+          <!-- Dynamic 3-4 Numbered Choices -->
+          <div id="choices-container" class="choices-container"></div>
+
+          <!-- Standard AI Prompt Bar for Custom Actions -->
+          <form id="action-form" class="action-form">
+            <input
+              id="action-input"
+              type="text"
+              class="action-input"
+              placeholder="Choose an option above (1–4) or type any custom action (e.g., 'Search the altar for traps', 'Ask Bork about rumours')..."
+              autocomplete="off"
+            />
+            <button id="stop-btn" class="btn btn-danger btn-sm hidden" type="button">
+              Stop
+            </button>
+            <button id="send-btn" class="btn btn-primary" type="submit">
+              Act ↵
+            </button>
+          </form>
+        </footer>
+      </main>
+    </div>
+
+    <!-- New Character Creation Modal -->
+    <div id="char-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="modal-title">Forge Your Adventurer in Eos</h2>
+          <button id="close-modal-btn" class="btn btn-ghost btn-sm" type="button">✕</button>
+        </div>
+        <p class="modal-desc">
+          The Sun-Heart lies shattered and something ancient stirs beneath the Whispering Catacombs of Oakhaven. Choose your name and calling.
+        </p>
+
+        <form id="char-create-form">
+          <div class="form-group">
+            <label for="hero-name-input" class="form-label">Adventurer Name</label>
+            <input
+              id="hero-name-input"
+              type="text"
+              class="action-input"
+              value="Kaelen"
+              maxlength="28"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Select Class (80s D&amp;D Lite)</label>
+            <div id="class-cards-grid" class="class-cards-grid"></div>
+          </div>
+
+          <div class="modal-actions">
+            <button id="cancel-char-btn" class="btn btn-secondary" type="button">Cancel</button>
+            <button class="btn btn-primary" type="submit">Begin Adventure in Eos</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

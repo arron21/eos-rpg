@@ -1,0 +1,18 @@
+{
+  "name": "eos-rpg",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Chronicles of Eos — Old-School Sword & Sorcery Text RPG powered by an In-Browser WebGPU LLM",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.4.0"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}
